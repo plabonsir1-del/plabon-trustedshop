@@ -1,0 +1,12 @@
+{
+  "name": "Plabon Trust Shop",
+  "description": "Premium accounts marketplace with multi-language support, AI assistance, and verified sellers.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

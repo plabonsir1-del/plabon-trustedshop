@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTS Premium 3D Avatar Engine</title>
+    <!-- Tailwind CSS for high-contrast, modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: transparent !important;
+            color: #f3f4f6;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+        .box-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+        /* Hide all lab assistant sidebars, telemetries, and control overlays completely for pristine clean presentation */
+        .optional-panel,
+        #top-bar-telemetry,
+        #mega-panel-toggle-btn {
+            display: none !important;
+        }
+    </style>
+    <!-- Font Import -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;850&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet font-sans">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js ESM Importmap -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+          "../libs/fflate.module.js": "https://unpkg.com/fflate@0.8.0/lib/browser.module.js",
+          "fflate": "https://unpkg.com/fflate@0.8.0/lib/browser.module.js"
+        }
+      }
+    </script>
+</head>
+<body class="font-sans antialiased text-slate-200">
+
+    <!-- Ambient Grid Background Overlay -->
+    <div id="ambient-grid" class="hidden absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20 pointer-events-none z-0"></div>
+
+    <!-- MAIN VIEWPORT CONTAINER -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0 cursor-grab active:cursor-grabbing"></div>
+
+    <!-- TOP FLOATING TELEMETRY BAR -->
+    <div id="top-bar-telemetry" class="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-4 pointer-events-none z-10">
+        <div class="flex items-center gap-3 bg-slate-950/80 backdrop-blur-md border border-slate-800 px-4 py-2.5 rounded-xl pointer-events-auto shadow-2xl">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <div>
+                <h1 class="text-xs font-black tracking-widest text-glow uppercase text-blue-400">PTS 3D AVATAR SYSTEM</h1>
+                <p class="text-[9px] text-slate-500 font-mono font-bold leading-none mt-0.5">READY FOR LIVE DEPLOYMENT</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-950/85 backdrop-blur-md border border-slate-800 p-1.5 rounded-xl pointer-events-auto text-xs font-mono">
+            <div id="model-status" class="px-2.5 py-1 bg-slate-900 border border-slate-750 text-slate-350 rounded-lg text-[10px] uppercase font-bold flex items-center gap-1.5">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-500" id="status-icon"></i>
+                <span id="status-text">Creating Procedural Avatar Sandbox...</span>
+            </div>
+            <div class="px-2.5 py-1 bg-slate-900 border border-slate-750 text-slate-400 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
+                <i data-lucide="activity" class="w-3.5 h-3.5 text-pink-500"></i>
+                FPS: <span id="fps-display" class="text-pink-400">60</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEFT SIDEBAR: CONFIGURATIONS & INTERFACE -->
+    <div id="left-sidebar" class="optional-panel absolute top-20 left-4 bottom-4 w-80 md:w-96 bg-slate-950/85 backdrop-blur-lg border border-slate-800 rounded-2xl flex flex-col justify-between p-4 shadow-2xl overflow-y-auto space-y-4 z-10 z-index-10 shrink-0">
+        
+        <div class="space-y-4">
+            <!-- Header Section -->
+            <div class="border-b border-slate-850 pb-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 tracking-wider">OFFLINE MODE READY</span>
+                    <span class="text-[9px] text-indigo-400 font-mono" id="engine-v">v1.1.0</span>
+                </div>
+                <h2 class="text-sm font-extrabold text-white mt-1.5">৩ডি ক্যারেক্টার ও অ্যানিমেশন লডার</h2>
+                <p class="text-slate-500 text-[10px] leading-relaxed">লোড করুন যেকোনো custom .glb ক্যারেক্টার এবং ফিউচার FBX বা GLB অ্যানিমেশন ফাইল।</p>
+            </div>
+
+            <!-- TAB 1: MODEL LOADER -->
+            <div class="space-y-2.5 bg-slate-900/40 p-3 rounded-xl border border-slate-850">
+                <div class="flex items-center gap-1.5 text-blue-450 text-[11px] font-extrabold uppercase tracking-wider">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> ৩ডি ক্যারেক্টার ইনপুট (Avatar)
+                </div>
+                
+                <!-- URL input -->
+                <div class="space-y-1">
+                    <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Model URL Path (GLB/GLTF)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="avatar-url-input" placeholder="avatar.glb or remote url..." class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none placeholder:text-slate-600">
+                        <button onclick="loadAvatarFromUrl()" class="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition">Load</button>
+                    </div>
+                </div>
+
+                <!-- Drag-and-drop Local File Selector -->
+                <div class="space-y-1">
+                    <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest block">অথবা আপনার কম্পিউটার থেকে মডেল দিন (Drag & Drop)</label>
+                    <div id="model-drop-zone" class="border-2 border-dashed border-slate-800 hover:border-blue-500/50 bg-slate-950/50 p-3 rounded-xl text-center cursor-pointer transition relative group">
+                        <input type="file" id="local-avatar-file" accept=".glb,.gltf" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <i data-lucide="upload-cloud" class="w-7 h-7 text-slate-500 group-hover:text-blue-450 mx-auto mb-1.5"></i>
+                        <p class="text-[10px] font-black text-slate-400 group-hover:text-slate-200">Upload 3D Avatar GLB</p>
+                        <p class="text-[8px] text-slate-600 mt-0.5">ড্র্যাগ করে ছেড়ে দিন অথবা ব্রাউজ করুন</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: FUTURE ANIMATIONS LOADER -->
+            <div class="space-y-2.5 bg-slate-900/40 p-3 rounded-xl border border-slate-850">
+                <div class="flex items-center gap-1.5 text-pink-450 text-[11px] font-extrabold uppercase tracking-wider">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> ফিউচার অ্যানিমেশন ফাইল যোগ করুন (.fbx/ .glb)
+                </div>
+                <p class="text-[9px] text-slate-500 leading-tight">আপনার ৩ডি এভার্টার মডেলে কোনো অ্যানিমেশন যোগ করতে চাইলে নিচে ফাইল বা URL দিন।</p>
+
+                <!-- URL animation load -->
+                <div class="space-y-1">
+                    <div class="flex gap-2">
+                        <input type="text" id="anim-url-input" placeholder="dance_anim.fbx or anim.glb..." class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none placeholder:text-slate-600">
+                        <button onclick="loadAnimationFromUrl()" class="px-3 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-bold transition">Add</button>
+                    </div>
+                </div>
+
+                <!-- Drag-and-drop animations -->
+                <div id="anim-drop-zone" class="border-2 border-dashed border-slate-800 hover:border-pink-500/50 bg-slate-950/50 p-3 rounded-xl text-center cursor-pointer transition relative group">
+                    <input type="file" id="local-anim-file" accept=".fbx,.glb,.gltf" class="absolute inset-0 opacity-0 cursor-pointer" multiple>
+                    <i data-lucide="plus-circle" class="w-7 h-7 text-slate-500 group-hover:text-pink-450 mx-auto mb-1.5"></i>
+                    <p class="text-[10px] font-black text-slate-400 group-hover:text-slate-200">অ্যানিমেশন ফাইল এ্যাড করুন (Multiple Allowed)</p>
+                    <p class="text-[8px] text-slate-650 mt-0.5">FBX বা GLB ফরম্যাটে তৈরি করা মোশন অ্যানিমেশন ট্র্যাক</p>
+                </div>
+            </div>
+
+            <!-- BENGALI CONCISE GUIDE (COLLAPSIBLE) -->
+            <details class="bg-indigo-950/25 border border-indigo-900/40 rounded-xl p-3 text-xs leading-relaxed group pointer-events-auto">
+                <summary class="font-extrabold text-indigo-400 flex items-center justify-between cursor-pointer select-none">
+                    <span class="flex items-center gap-1.5 uppercase text-[10px] tracking-wider"><i data-lucide="help-circle" class="w-3.5 h-3.5"></i> বাংলায় ব্যবহার নির্দেশিকা</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="mt-2 text-indigo-200/90 text-[10px] space-y-1.5 border-t border-indigo-900/30 pt-2 font-medium">
+                    <p><strong>১. ৩ডি মডেল লোড:</strong> ডিফল্টভাবে একটি ৩টি ৩ডি স্যান্ডবক্স ডামি সাইকেল বা অবয়ব তৈরি করা আছে। উপরে আপনার নিজের <code class="text-white font-mono bg-indigo-900/30 px-1 rounded">avatar.glb</code> লিঙ্ক দিন অথবা সরাসরি ফাইল ড্র্যাগ-ড্রপ করুন।</p>
+                    <p><strong>২. অ্যানিমেশন যোগ:</strong> যেকোনো FBX বা GLB অ্যানিমেশন ফাইল যোগ করতে চাইলে "ফিউচার অ্যানিমেশন" বক্সে ড্র্যাগ ট্রপ করুন। কোডটি ডাইনামিকভাবে Bones গুলো টার্গেট করে ক্যারেক্টারে মোশন সেট করে দিবে।</p>
+                    <p><strong>৩. কন্ট্রোলস:</strong> ডানপাশের প্যানেল দিয়ে লাইটিং, শ্যাডো, স্কেলিং ও গ্রিড টগল করতে পারবেন। নিচে একটি প্লেয়ার বার আছে যা দিয়ে অ্যানিমেশন স্পীড ও লুপ কাস্টমাইজ করা যাবে।</p>
+                </div>
+            </details>
+        </div>
+
+        <!-- FOOTER INFO BOX -->
+        <div class="border-t border-slate-850 pt-3 text-[9px] text-slate-500 font-mono font-bold flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+                <span>SYSTEM RENDER: THREE.WebGLRenderer</span>
+                <span class="text-blue-500">ACTIVE</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+                <span>DEPLOY COMPATIBILITY: Netlify/Render</span>
+                <span>100% SECURE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDE PANEL: CONTROLS & UTILITIES -->
+    <div id="right-sidebar" class="optional-panel absolute top-20 right-4 bottom-4 w-72 bg-slate-950/85 backdrop-blur-lg border border-slate-800 rounded-2xl flex flex-col justify-between p-4 shadow-2xl overflow-y-auto space-y-4 z-10">
+        <div class="space-y-4">
+            
+            <div class="border-b border-slate-850 pb-2 flex items-center justify-between">
+                <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="settings" class="w-3.5 h-3.5 text-blue-500"></i> সেটিংস ও টিউনিং
+                </h3>
+            </div>
+
+            <!-- Scene Helpers -->
+            <div class="bg-slate-900/30 p-3 rounded-xl border border-slate-850 space-y-2.5 text-xs">
+                <h4 class="text-[8px] font-black tracking-widest text-slate-400 uppercase">scene display options</h4>
+                
+                <div class="flex items-center justify-between cursor-pointer">
+                    <span class="text-[10px] font-bold text-slate-350">Grid Helper (মেঝে গ্রিড)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-grid" class="sr-only peer" onchange="toggleGridHelper()">
+                        <div class="w-7 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between cursor-pointer">
+                    <span class="text-[10px] font-bold text-slate-350">Bones Joint View (হাড়ের জয়েন্ট)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-skeleton" class="sr-only peer" onchange="toggleSkeletonHelper()">
+                        <div class="w-7 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between cursor-pointer">
+                    <span class="text-[10px] font-bold text-slate-350">Custom Lighting (অটো আলো)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-lighting" checked class="sr-only peer" onchange="toggleLightingBoost()">
+                        <div class="w-7 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Lighting Tuning -->
+            <div class="bg-slate-900/30 p-3 rounded-xl border border-slate-850 space-y-2.5 text-xs">
+                <h4 class="text-[8px] font-black tracking-widest text-pink-400 uppercase">Lighting & Intensity</h4>
+                
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>Ambient Light (পারিপার্শ্বিক আলো)</span>
+                        <span id="label-ambient" class="font-mono text-white">0.6</span>
+                    </div>
+                    <input type="range" id="slider-ambient" min="0" max="2" step="0.1" value="0.6" class="w-full accent-blue-500 bg-slate-900 h-1.5 rounded-lg appearance-none" oninput="updateLighting()">
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>Directional Light (প্রধান আলো)</span>
+                        <span id="label-directional" class="font-mono text-white">1.0</span>
+                    </div>
+                    <input type="range" id="slider-directional" min="0" max="3" step="0.1" value="1.0" class="w-full accent-pink-500 bg-slate-900 h-1.5 rounded-lg appearance-none" oninput="updateLighting()">
+                </div>
+            </div>
+
+            <!-- Avatar Model Sizing -->
+            <div class="bg-slate-900/30 p-3 rounded-xl border border-slate-850 space-y-2.5 text-xs">
+                <h4 class="text-[8px] font-black tracking-widest text-indigo-400 uppercase">Transform & Placement</h4>
+                
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>Model Scale (মডেল সাইজ স্কেল)</span>
+                        <span id="label-scale" class="font-mono text-white">1.0</span>
+                    </div>
+                    <input type="range" id="slider-scale" min="0.1" max="4" step="0.1" value="1.0" class="w-full accent-indigo-500 bg-slate-900 h-1.5 rounded-lg appearance-none" oninput="updateModelTransform()">
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>Model Y Position (ভার্টিকাল পজিশন)</span>
+                        <span id="label-posy" class="font-mono text-white">0.0</span>
+                    </div>
+                    <input type="range" id="slider-posy" min="-2" max="2" step="0.1" value="0.0" class="w-full accent-indigo-400 bg-slate-900 h-1.5 rounded-lg appearance-none" oninput="updateModelTransform()">
+                </div>
+
+                <button onclick="resetCameraAndModel()" class="w-full bg-slate-900 hover:bg-slate-850 text-slate-300 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold tracking-wider flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-400"></i> RESET CAMERA & VIEW
+                </button>
+            </div>
+
+            <!-- Interactive Body Tuning & Organ Shaper -->
+            <div class="bg-slate-900/35 p-3 rounded-xl border border-slate-800 space-y-2.5 text-xs">
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+                    <h4 class="text-[8px] font-black tracking-widest text-emerald-400 uppercase flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-2.5 h-2.5"></i> ৩ডি অঙ্গ কাস্টমাইজেশন ও বডি টিউনিং
+                    </h4>
+                </div>
+                
+                <!-- Breasts / Boobs Size -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>বক্ষ বা বুবস সাইজ (Breasts/Boobs)</span>
+                        <span id="label-body-breasts" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-breasts" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('breasts', this.value)">
+                </div>
+
+                <!-- Hips / Butt Size -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>কোমর ও নিতম্ব (Hips / Butt)</span>
+                        <span id="label-body-hips" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-hips" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('hips', this.value)">
+                </div>
+
+                <!-- Waist Slimming -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>কোমর বা বেলী (Waist / Belly)</span>
+                        <span id="label-body-waist" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-waist" min="0.6" max="1.8" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('waist', this.value)">
+                </div>
+
+                <!-- Neck Size -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>গর্দান বা গলা (Neck Size)</span>
+                        <span id="label-body-neck" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-neck" min="0.7" max="1.8" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('neck', this.value)">
+                </div>
+
+                <!-- Head Size -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>মাথার আকার (Head Size)</span>
+                        <span id="label-body-head" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-head" min="0.7" max="1.6" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('head', this.value)">
+                </div>
+
+                <!-- Thighs / Legs -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>উরু ও হাঁটু (Thigh / Legs)</span>
+                        <span id="label-body-thighs" class="font-mono text-emerald-400">1.0</span>
+                    </div>
+                    <input type="range" id="slider-body-thighs" min="0.6" max="2.0" step="0.05" value="1.0" class="w-full accent-emerald-500 bg-slate-900 h-1 rounded-lg appearance-none" oninput="applyBodyAdjustment('thighs', this.value)">
+                </div>
+            </div>
+
+            <!-- Direct Mouse Elevate Interaction Toggle -->
+            <div class="bg-slate-900/35 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+                <div class="flex items-center justify-between cursor-pointer">
+                    <span class="text-[9.5px] font-black text-slate-300 tracking-wider flex items-center gap-1 uppercase">
+                        <i data-lucide="hand" class="w-3 h-3 text-cyan-400 animate-bounce"></i> মাউস দিয়ে সোজা টানাটানি (Drag Y)
+                    </span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-drag-y" class="sr-only peer" onchange="toggleDragYMode()">
+                        <div class="w-7 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+                    </label>
+                </div>
+                <p class="text-[8px] text-slate-500 leading-tight">
+                    এটি অন করে ক্যারেক্টারকে মাউসের বাম বাটন চেপে ধরে স্ক্রিনে যেকোনো জায়গায় উপরে-নিচে ড্র্যাগ করে সরাতে পারবেন।
+                </p>
+            </div>
+
+        </div>
+
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-850/50 space-y-2 text-xs">
+            <h4 class="text-[8px] font-black tracking-widest text-emerald-400 uppercase">Direct Injection Template</h4>
+            <p class="text-[8.5px] text-slate-400 leading-normal">
+                প্রডাকশনে সরাসরি রান করতে এই কোডের স্ক্রিপ্ট ট্যাগগুলোর ভিতরে অ্যানিমেশন ডাটা সোর্স লিংক যোগ করতে পারবেন।
+            </p>
+        </div>
+    </div>
+
+    <!-- FLOATING CENTRAL-BOTTOM AUDIO/PLAYBACK CONTROL BAR -->
+    <div id="bottom-bar" class="optional-panel absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-950/90 border border-slate-800 rounded-2xl flex flex-col p-4 w-[90%] sm:w-[500px] box-glow shadow-2xl z-15 select-none z-10">
+        
+        <!-- Dropdown of active tracks -->
+        <div class="flex items-center gap-3 w-full pb-3 border-b border-slate-850 flex-wrap sm:flex-nowrap">
+            <div class="flex items-center gap-1.5 text-glow font-bold text-[10px] text-blue-400 uppercase shrink-0">
+                <i data-lucide="music" class="w-4 h-4"></i> Active Motion:
+            </div>
+            
+            <div id="animation-selector-container" class="w-full relative">
+                <select id="animation-dropdown" class="w-full bg-slate-900 border border-slate-800 text-xs font-semibold px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-white pr-8 text-[11px]" onchange="playSelectedAnimation()">
+                    <!-- Populated dynamically -->
+                    <option value="">-- No Animations Loaded yet --</option>
+                </select>
+                <div class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-550 pointer-events-none">
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls: rewind, pause, play, timeline -->
+        <div class="flex items-center justify-between gap-4 mt-3">
+            <div class="flex items-center gap-1">
+                <button onclick="stopAnimation()" class="p-2 bg-slate-900 hover:bg-slate-800 hover:text-white text-slate-400 rounded-lg border border-slate-850 transition" title="Stop & Rewind">
+                    <i data-lucide="square" class="w-4 h-4"></i>
+                </button>
+                <button onclick="togglePlayback()" id="play-pause-btn" class="p-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition" title="Pause / Resume">
+                    <i data-lucide="pause" id="play-pause-icon" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Animation Speed Multiplier -->
+            <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-850 p-1 px-2.5 rounded-lg">
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest shrink-0">SPEED:</span>
+                <select id="speed-dropdown" class="bg-transparent border-0 text-slate-300 font-mono text-[10px] focus:outline-none cursor-pointer pr-1" onchange="updatePlaybackSpeed()">
+                    <option value="0.25">0.25x</option>
+                    <option value="0.5">0.5x</option>
+                    <option value="0.8">0.8x</option>
+                    <option value="1.0" selected>1.0x (Normal)</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2.0">2.0x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING CONTROLS TOGGLE FOR MOBILE/EMBED MODES -->
+    <button id="mega-panel-toggle-btn" onclick="toggleAllPanels()" class="absolute bottom-4 right-4 z-[999] bg-slate-950/95 hover:bg-slate-900 border border-slate-800 text-white p-2.5 rounded-full shadow-xl flex items-center justify-center gap-1.5 cursor-pointer pointer-events-auto text-xs font-bold transition">
+        <i data-lucide="settings" class="w-4 h-4 text-emerald-400 animate-spin" style="animation-duration: 8s;"></i>
+        <span class="text-[10px] tracking-widest uppercase font-black">মেগা প্যানেল</span>
+    </button>
+
+    <!-- CORE THREE.JS LOGIC -->
+    <script type="module">
+        // Global toggle panel function for mobile/embed environments
+        window.toggleAllPanels = function() {
+            const left = document.getElementById('left-sidebar');
+            const right = document.getElementById('right-sidebar');
+            const bottom = document.getElementById('bottom-bar');
+            if (left && right && bottom) {
+                const isHidden = left.style.display === 'none' || window.getComputedStyle(left).display === 'none';
+                if (isHidden) {
+                    left.style.setProperty('display', 'flex', 'important');
+                    right.style.setProperty('display', 'flex', 'important');
+                    bottom.style.setProperty('display', 'flex', 'important');
+                } else {
+                    left.style.setProperty('display', 'none', 'important');
+                    right.style.setProperty('display', 'none', 'important');
+                    bottom.style.setProperty('display', 'none', 'important');
+                }
+            }
+        };
+
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+        // Core variables
+        let scene, camera, renderer, controls;
+        let ambientLight, directionalLight, gridHelper, skeletonHelper;
+        
+        // Model and animation trackers
+        let activeAvatarMesh = null;
+        let mixer = null;
+        let clock = new THREE.Clock();
+        
+        // Active animations dictionary mapping name -> AnimationClip
+        let animationsMap = {};
+        let activeAction = null;
+        let isAnimationPlaying = true;
+        let currentTargetScale = 1.0;
+        let currentTargetPosY = 0.0;
+        window.isBreathingEnabled = true;
+
+        // FPS calculation variables
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+
+        // Initialize the WebGL preview environment
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 1. Create Scene
+            scene = new THREE.Scene();
+            scene.background = null; // 100% transparent background
+
+            // 2. Create Camera
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera.position.set(0, 1.6, 4.5); // Position at human eye height
+
+            // 3. Create WebGL Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.05;
+            container.appendChild(renderer.domElement);
+
+            // 4. Create OrbitControls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.05; // Do not go below flooring grid
+            controls.minDistance = 1;
+            controls.maxDistance = 15;
+            controls.target.set(0, 1, 0); // Focus controls at chest height of character
+
+            // 5. Setup Lighting
+            setupLighting();
+
+            // 6. Setup Helpers (Floor grid tracker & skeletal overlay helper)
+            setupHelpers();
+
+            // 7. Render dynamic procedural avatar dummy to prevent scene empty crash
+            createProceduralFallbackAvatar();
+
+            // 8. Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            setupFileHandlers();
+
+            // Setup direct Drag-Y Height dragging listeners
+            window.isDragYMode = false;
+            let previousDragY = 0;
+            container.addEventListener('mousedown', (e) => {
+                previousDragY = e.clientY;
+            });
+            container.addEventListener('mousemove', (e) => {
+                if (window.isDragYMode && e.buttons === 1) {
+                    const deltaY = e.clientY - previousDragY;
+                    currentTargetPosY -= deltaY * 0.005;
+                    
+                    // Keep bounds
+                    currentTargetPosY = Math.max(-5, Math.min(5, currentTargetPosY));
+
+                    // Update shaper slider
+                    const posySlider = document.getElementById('slider-posy');
+                    if (posySlider) posySlider.value = currentTargetPosY;
+                    const posyLabel = document.getElementById('label-posy');
+                    if (posyLabel) posyLabel.textContent = currentTargetPosY.toFixed(2);
+
+                    if (activeAvatarMesh) {
+                        activeAvatarMesh.position.y = currentTargetPosY;
+                    }
+                    previousDragY = e.clientY;
+                }
+            });
+
+            // Start Animation Render loop
+            animate();
+        }
+
+        // Setup Lighting (Standard and Boost settings)
+        function setupLighting() {
+            // Ambient light source (emits light in all direction)
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // Directional Light representation (acting as the main spot studio soft-box light setting)
+            directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            directionalLight.position.set(2, 4, 3);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.bias = -0.0001;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 15;
+            directionalLight.shadow.camera.left = -2;
+            directionalLight.shadow.camera.right = 2;
+            directionalLight.shadow.camera.top = 2.5;
+            directionalLight.shadow.camera.bottom = -2;
+            scene.add(directionalLight);
+
+            // Hemisphere rim light to create an elegant neon glowing outline on character backs
+            const hemiLight = new THREE.HemisphereLight(0x3b82f6, 0xec4899, 0.45);
+            hemiLight.position.set(0, 5, -5);
+            scene.add(hemiLight);
+        }
+
+        // Floor Grid Helpers
+        function setupHelpers() {
+            // Beautiful grid lines tracking space
+            gridHelper = new THREE.GridHelper(24, 24, 0x3b82f6, 0x1e293b);
+            gridHelper.position.y = -0.01; // Slightly offset to avoid depth-fighting with shadow plane
+            gridHelper.visible = false; // Off by default
+            scene.add(gridHelper);
+
+            // Base platform disc/ring shadow receptor plane
+            const floorGeo = new THREE.PlaneGeometry(30, 30);
+            const floorMat = new THREE.ShadowMaterial({ opacity: 0.4 });
+            const floorPlane = new THREE.Mesh(floorGeo, floorMat);
+            floorPlane.rotation.x = -Math.PI / 2;
+            floorPlane.receiveShadow = true;
+            scene.add(floorPlane);
+        }
+
+        // ==========================================
+        // DYNAMIC PRESTINE PROCEDURAL STATIC AVATAR
+        // Creates a highly visual modular cyborg/humanoid mock
+        // if avatar.glb is absent, preventing loader failure.
+        // ==========================================
+        function createProceduralFallbackAvatar() {
+            updateStatus('Creating Procedural Fallback Avatar...', 'loader-2', true);
+
+            // If there was an old mesh, safely destroy it to free memory
+            destroyActiveMesh();
+
+            // Generate an elegant glowing Sci-Fi cyborg skeleton dummy mesh representing a humanoid
+            const avatarGroup = new THREE.Group();
+            avatarGroup.name = 'Procedural_Cyber_Avatar';
+
+            const jointMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3b82f6, 
+                roughness: 0.1, 
+                metalness: 0.8,
+                emissive: 0x1d4ed8,
+                emissiveIntensity: 0.8
+            });
+
+            const linkMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xec4899, 
+                roughness: 0.3, 
+                metalness: 0.5,
+                emissive: 0xbe185d,
+                emissiveIntensity: 0.45
+            });
+
+            // Create simple mock joints representing human structural nodes
+            const joints = [
+                { name: 'Root', pos: [0, 0, 0], scale: 0.08 },
+                { name: 'Hips', pos: [0, 0.9, 0], scale: 0.12 },
+                { name: 'Spine', pos: [0, 1.2, 0], scale: 0.10 },
+                { name: 'Head', pos: [0, 1.6, 0], scale: 0.14 },
+                { name: 'LeftShoulder', pos: [-0.25, 1.35, 0], scale: 0.08 },
+                { name: 'RightShoulder', pos: [0.25, 1.35, 0], scale: 0.08 },
+                { name: 'LeftElbow', pos: [-0.5, 1.1, 0], scale: 0.07 },
+                { name: 'RightElbow', pos: [0.5, 1.1, 0], scale: 0.07 },
+                { name: 'LeftHand', pos: [-0.7, 0.85, 0], scale: 0.06 },
+                { name: 'RightHand', pos: [0.7, 0.85, 0], scale: 0.06 },
+                { name: 'LeftKnee', pos: [-0.15, 0.5, 0], scale: 0.08 },
+                { name: 'RightKnee', pos: [0.15, 0.5, 0], scale: 0.08 },
+                { name: 'LeftFoot', pos: [-0.17, 0.05, 0], scale: 0.07 },
+                { name: 'RightFoot', pos: [0.17, 0.05, 0], scale: 0.07 }
+            ];
+
+            const createdJointMeshes = {};
+
+            // Render joint dots of fallback character
+            joints.forEach(j => {
+                const geom = new THREE.SphereGeometry(j.scale, 16, 16);
+                const mesh = new THREE.Mesh(geom, jointMaterial);
+                mesh.position.set(j.pos[0], j.pos[1], j.pos[2]);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                mesh.name = j.name;
+                avatarGroup.add(mesh);
+                createdJointMeshes[j.name] = mesh;
+            });
+
+            // Help link limbs dynamically using cylinder rods to visualize model setup
+            const connections = [
+                ['Hips', 'Spine'], ['Spine', 'Head'],
+                ['Spine', 'LeftShoulder'], ['Spine', 'RightShoulder'],
+                ['LeftShoulder', 'LeftElbow'], ['RightShoulder', 'RightElbow'],
+                ['LeftElbow', 'LeftHand'], ['RightElbow', 'RightHand'],
+                ['Hips', 'LeftKnee'], ['Hips', 'RightKnee'],
+                ['LeftKnee', 'LeftFoot'], ['RightKnee', 'RightFoot']
+            ];
+
+            window.fallbackConnections = [];
+
+            connections.forEach(([from, to]) => {
+                const pFrom = createdJointMeshes[from].position;
+                const pTo = createdJointMeshes[to].position;
+
+                // Create cylindrical mock bones mapping from relative points
+                const distance = pFrom.distanceTo(pTo);
+                const cyGeo = new THREE.CylinderGeometry(0.025, 0.025, distance, 8);
+                const cylinder = new THREE.Mesh(cyGeo, linkMaterial);
+                
+                // Align cylinder with the joints
+                const direction = new THREE.Vector3().subVectors(pTo, pFrom);
+                cylinder.position.copy(pFrom).addScaledVector(direction, 0.5);
+                cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+                cylinder.castShadow = true;
+                avatarGroup.add(cylinder);
+
+                window.fallbackConnections.push({
+                    from,
+                    to,
+                    cylinder,
+                    initialDistance: distance
+                });
+            });
+
+            // Add subtle chest hologram ring
+            const haloGeo = new THREE.TorusGeometry(0.2, 0.008, 8, 32);
+            const haloMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide });
+            const chestHalo = new THREE.Mesh(haloGeo, haloMat);
+            chestHalo.position.set(0, 1.2, 0.1);
+            chestHalo.rotation.x = Math.PI / 2;
+            avatarGroup.add(chestHalo);
+
+            scene.add(avatarGroup);
+            activeAvatarMesh = avatarGroup;
+
+            // Generate synthetic dynamic rotation keys simulating subtle breath idle animation
+            mixer = null; // No actual bones configuration on this custom mock group, simulated below in loop
+            
+            updateStatus('Cyber Skeleton Loaded (Fallback Mode)', 'user', false);
+            lucide.replace();
+        }
+
+        // ==========================================
+        // 📥 MAIN DEDICATED MODEL LOADER (GLTF/GLB)
+        // ==========================================
+        window.loadAvatarGLB = function(sourcePathOrBlobUrl) {
+            updateStatus('Loading main 3D avatar Model...', 'loader-2', true);
+
+            const loader = new GLTFLoader();
+            
+            loader.load(
+                sourcePathOrBlobUrl,
+                (gltf) => {
+                    // Success callback
+                    destroyActiveMesh();
+                    
+                    activeAvatarMesh = gltf.scene;
+                    
+                    // Enable elegant real-time shadows across all sub-meshes of GLTF avatar
+                    activeAvatarMesh.traverse((node) => {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                            
+                            // Let's protect realistic lighting of material attributes
+                            if (node.material) {
+                                node.material.roughness = Math.max(node.material.roughness, 0.15);
+                                node.material.depthWrite = true;
+                            }
+                        }
+                    });
+
+                    // Auto fit, center and normalize any custom/Internet downloaded model
+                    const box = new THREE.Box3().setFromObject(activeAvatarMesh);
+                    const size = box.getSize(new THREE.Vector3());
+                    const center = box.getCenter(new THREE.Vector3());
+                    
+                    const desiredHeight = 1.75; // average human height
+                    if (size.y > 0) {
+                        const calculatedScale = desiredHeight / size.y;
+                        currentTargetScale = calculatedScale;
+                        activeAvatarMesh.scale.setScalar(currentTargetScale);
+                        
+                        // Floor positioning (feet on the grid floor)
+                        currentTargetPosY = -box.min.y * currentTargetScale;
+                        activeAvatarMesh.position.y = currentTargetPosY;
+                        
+                        // Horizontal center
+                        activeAvatarMesh.position.x = -center.x * currentTargetScale;
+                        activeAvatarMesh.position.z = -center.z * currentTargetScale;
+                    } else {
+                        // Fallback static
+                        activeAvatarMesh.scale.setScalar(currentTargetScale);
+                        activeAvatarMesh.position.y = currentTargetPosY;
+                    }
+                    
+                    scene.add(activeAvatarMesh);
+
+                    // Initialize the AnimationMixer bound directly on this loaded model
+                    mixer = new THREE.AnimationMixer(activeAvatarMesh);
+
+                    // If the GLB model contains built-in internal animations, index them
+                    animationsMap = {};
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        gltf.animations.forEach((clip, index) => {
+                            const clipName = clip.name || `GLTF_BuiltIn_${index + 1}`;
+                            animationsMap[clipName] = clip;
+                        });
+                    }
+
+                    // Re-bind helpers if requested
+                    rebindHelpers();
+                    
+                    // Refresh custom controller lists
+                    refreshAnimationDropdown();
+
+                    if (window.applyAllBodyAdjustmentsToActiveMesh) {
+                        window.applyAllBodyAdjustmentsToActiveMesh();
+                    }
+
+                    updateStatus('3D Model Loaded Successfully!', 'check-circle-2', false);
+                    console.log("SUCCESSFULLY LOADED MAIN AVATAR:", activeAvatarMesh);
+                },
+                (progress) => {
+                    // Loading progress handler
+                    const pct = Math.round((progress.loaded / progress.total) * 100);
+                    if (!isNaN(pct)) {
+                        updateStatus(`Downloading 3D Model: ${pct}%`, 'loader-2', true);
+                    }
+                },
+                (error) => {
+                    // Error callback (e.g., file not found)
+                    console.error("COULD NOT RESOLVE GLTF/GLB AVATAR SOURCE:", error);
+                    updateStatus('Model URL not found. Kept Fallback dummy.', 'alert-triangle', false);
+                    
+                    // Automatically keep or restore procedural robot to keep preview pristine
+                    if (!activeAvatarMesh || activeAvatarMesh.name !== 'Procedural_Cyber_Avatar') {
+                        createProceduralFallbackAvatar();
+                    }
+                }
+            );
+        };
+
+
+        // ==========================================
+        // 🔄 DYNAMIC FUTURE ANIMATION INJECTOR
+        // ==========================================
+        /**
+         * CRITICAL REQUIREMENT LOGIC #3 & #4:
+         * This modular function accepts an array of animation file URLs or blobs, 
+         * downloads/reads them, extracts their KeyframeTracks, and cleanly re-targets 
+         * and registers them dynamically onto the active loaded human avatar mesh.
+         * 
+         * Supported Input Formats:
+         * - GLB/GLTF animation rigs
+         * - FBX model motion captures
+         */
+        window.loadFutureAnimations = function(animationSourcesArray) {
+            if (!activeAvatarMesh) {
+                console.warn("No loaded avatar character present. Retrying helper bindings.");
+                return;
+            }
+
+            if (!mixer) {
+                mixer = new THREE.AnimationMixer(activeAvatarMesh);
+            }
+
+            animationSourcesArray.forEach((source) => {
+                let pathStr = typeof source === 'string' ? source : (source.name || 'uploaded_animation');
+                let extension = pathStr.split('.').pop().toLowerCase();
+
+                updateStatus(`Parsing Animation: ${pathStr}...`, 'loader-2', true);
+
+                if (extension === 'fbx') {
+                    // FBX Loader
+                    const fbxLoader = new FBXLoader();
+                    fbxLoader.load(
+                        source,
+                        (fbxGroup) => {
+                            if (fbxGroup.animations && fbxGroup.animations.length > 0) {
+                                fbxGroup.animations.forEach((clip, idx) => {
+                                    // Make sure names are unique
+                                    const friendlyName = `${pathStr.replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, "")}_[${idx}]`;
+                                    
+                                    // Retargeting explanation:
+                                    // FBX bone naming structures might contain prefixes like "mixamo:" or custom namespace IDs.
+                                    // We cleanly strip namespaces dynamically if bones mismatch, mapping to generic paths.
+                                    const cleanedClip = cleanAnimationTracksForTarget(clip, activeAvatarMesh);
+                                    
+                                    animationsMap[friendlyName] = cleanedClip;
+                                });
+                                refreshAnimationDropdown();
+                                updateStatus('FBX Animation Track Linked!', 'check-circle-2', false);
+                            } else {
+                                updateStatus('Error: FBX has no animation tracks', 'alert-triangle', false);
+                            }
+                        },
+                        undefined,
+                        (err) => {
+                            console.error(`Failed to inject future FBX Anim: ${pathStr}`, err);
+                            updateStatus('FBX loader skipped or missing key nodes', 'alert-triangle', false);
+                        }
+                    );
+
+                } else if (extension === 'glb' || extension === 'gltf') {
+                    // GLTF Animation Loader
+                    const gltfLoader = new GLTFLoader();
+                    gltfLoader.load(
+                        source,
+                        (gltfObj) => {
+                            if (gltfObj.animations && gltfObj.animations.length > 0) {
+                                gltfObj.animations.forEach((clip, idx) => {
+                                    const friendlyName = `${pathStr.replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, "")}_Track_${idx + 1}`;
+                                    
+                                    // Track Retargeter
+                                    const cleanedClip = cleanAnimationTracksForTarget(clip, activeAvatarMesh);
+                                    
+                                    animationsMap[friendlyName] = cleanedClip;
+                                });
+                                refreshAnimationDropdown();
+                                updateStatus('GLTF animation successfully bound!', 'check-circle-2', false);
+                            } else {
+                                updateStatus('GLTF contains no animation data', 'alert-triangle', false);
+                            }
+                        },
+                        undefined,
+                        (err) => {
+                            console.error(`Failed to inject GLTF Anim: ${pathStr}`, err);
+                            updateStatus('GLTF loader skipped or broken source', 'alert-triangle', false);
+                        }
+                    );
+                } else {
+                    updateStatus('Error: Format must be FBX or GLB/GLTF', 'alert-triangle', false);
+                }
+            });
+        };
+
+        /**
+         * Dynamic Bone Retargeting & Cleaning Engine:
+         * When future animation clips are loaded, their tracks refer to bone joints names of the 
+         * animation file (e.g., "mixamorigLeftUpLeg.rotation" or "rootJoint/Hip.position").
+         * To play these on our local GLB avatar, which may have simpler bone names (e.g. "LeftUpLeg.rotation"),
+         * we clean track paths dynamically so three.js Mixer can automatically bind keyframes.
+         */
+        function cleanAnimationTracksForTarget(clip, targetCharacter) {
+            const tempTracks = [];
+            
+            clip.tracks.forEach((track) => {
+                let cleanPath = track.name;
+                
+                // 1. Strip standard Mixamo prefixes frequently present in FBX exports
+                if (cleanPath.includes('mixamorig')) {
+                    cleanPath = cleanPath.replace(/mixamorig/g, '');
+                }
+                
+                // 2. Clear out scene workspace paths or grouping labels (e.g. "Armature|Bone")
+                if (cleanPath.includes(':')) {
+                    cleanPath = cleanPath.split(':').pop(); // Keep only bone sub-channel
+                }
+
+                // Create a duplicate pristine keyframe tract mapped to corrected path
+                let newTrack;
+                if (track instanceof THREE.QuaternionKeyframeTrack) {
+                    newTrack = new THREE.QuaternionKeyframeTrack(cleanPath, track.times, track.values);
+                } else if (track instanceof THREE.VectorKeyframeTrack) {
+                    newTrack = new THREE.VectorKeyframeTrack(cleanPath, track.times, track.values);
+                } else {
+                    newTrack = track.clone();
+                    newTrack.name = cleanPath;
+                }
+                tempTracks.push(newTrack);
+            });
+
+            return new THREE.AnimationClip(clip.name, clip.duration, tempTracks);
+        }
+
+        // Play the user selected active track
+        window.playSelectedAnimation = function() {
+            const selectDropdown = document.getElementById('animation-dropdown');
+            const chosenClipName = selectDropdown.value;
+
+            if (!chosenClipName || !animationsMap[chosenClipName]) {
+                stopAnimation();
+                return;
+            }
+
+            if (!mixer) {
+                mixer = new THREE.AnimationMixer(activeAvatarMesh);
+            }
+
+            // Cross-fade gracefully to new sequence
+            const newClip = animationsMap[chosenClipName];
+            const newAction = mixer.clipAction(newClip);
+
+            if (activeAction) {
+                activeAction.fadeOut(0.35); // Smooth blend transition (0.35s)
+            }
+
+            newAction.reset()
+                     .setEffectiveTimeScale(parseFloat(document.getElementById('speed-dropdown').value))
+                     .setEffectiveWeight(1.0)
+                     .fadeIn(0.35)
+                     .play();
+
+            activeAction = newAction;
+            isAnimationPlaying = true;
+            
+            // Toggle icon to pause representer
+            updatePauseIcon(true);
+            updateStatus(`Playing: ${chosenClipName}`, 'film', false);
+        };
+
+        // Pause / Resume playback
+        window.togglePlayback = function() {
+            if (!activeAction) {
+                // If nothing playing, trigger the first index
+                const dropdown = document.getElementById('animation-dropdown');
+                if (dropdown.options.length > 1) {
+                    dropdown.selectedIndex = 1;
+                    playSelectedAnimation();
+                }
+                return;
+            }
+
+            if (isAnimationPlaying) {
+                // Pause it
+                activeAction.paused = true;
+                isAnimationPlaying = false;
+                updatePauseIcon(false);
+                updateStatus('Animation Paused', 'pause', false);
+            } else {
+                // Resume
+                activeAction.paused = false;
+                isAnimationPlaying = true;
+                updatePauseIcon(true);
+                updateStatus('Resumed Playback', 'play', false);
+            }
+        };
+
+        // Stop and rewind
+        window.stopAnimation = function() {
+            if (activeAction) {
+                activeAction.stop();
+                activeAction = null;
+            }
+            isAnimationPlaying = false;
+            updatePauseIcon(false);
+            updateStatus('Animation Stopped & Reset', 'square', false);
+        };
+
+        // Update animation loop playback speed
+        window.updatePlaybackSpeed = function() {
+            if (activeAction) {
+                const speed = parseFloat(document.getElementById('speed-dropdown').value);
+                activeAction.setEffectiveTimeScale(speed);
+            }
+        };
+
+        // Refresh Select list to allow live updates of animations list
+        function refreshAnimationDropdown() {
+            const dropdown = document.getElementById('animation-dropdown');
+            dropdown.innerHTML = '';
+
+            const keys = Object.keys(animationsMap);
+            if (keys.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = '-- No Animations Loaded yet --';
+                dropdown.appendChild(opt);
+                return;
+            }
+
+            // Friendly prompt select
+            const defOpt = document.createElement('option');
+            defOpt.value = '';
+            defOpt.textContent = `Select Animation Track (${keys.length} loaded)...`;
+            dropdown.appendChild(defOpt);
+
+            keys.forEach((key) => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = key;
+                dropdown.appendChild(opt);
+            });
+            lucide.replace();
+        }
+
+        // Destroy old avatar inside scene to clear GPU memory
+        function destroyActiveMesh() {
+            if (activeAvatarMesh) {
+                scene.remove(activeAvatarMesh);
+                activeAvatarMesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                });
+                activeAvatarMesh = null;
+            }
+            if (skeletonHelper) {
+                scene.remove(skeletonHelper);
+                skeletonHelper = null;
+            }
+        }
+
+        // Rebind helpers when models transition
+        function rebindHelpers() {
+            const toggleSkel = document.getElementById('toggle-skeleton');
+            if (toggleSkel.checked) {
+                if (skeletonHelper) scene.remove(skeletonHelper);
+                skeletonHelper = new THREE.SkeletonHelper(activeAvatarMesh);
+                skeletonHelper.material.linewidth = 2;
+                scene.add(skeletonHelper);
+            }
+        }
+
+        // Setup Drag & Drop local model / anim parsing files
+        function setupFileHandlers() {
+            const modelZone = document.getElementById('model-drop-zone');
+            const animZone = document.getElementById('anim-drop-zone');
+            
+            const modelInput = document.getElementById('local-avatar-file');
+            const animInput = document.getElementById('local-anim-file');
+
+            // 1. Model Upload click
+            modelInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const blobUrl = URL.createObjectURL(e.target.files[0]);
+                    window.loadAvatarGLB(blobUrl);
+                }
+            });
+
+            // 2. Animation Upload click
+            animInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const fileBlobs = [];
+                    for (let i = 0; i < e.target.files.length; i++) {
+                        const file = e.target.files[i];
+                        const url = URL.createObjectURL(file);
+                        
+                        // Fake rename property for loadFutureAnimations parser matching extension
+                        Object.defineProperty(url, 'name', { value: file.name });
+                        fileBlobs.push(url);
+                    }
+                    window.loadFutureAnimations(fileBlobs);
+                }
+            });
+
+            // 3. Setup drag & drops highlights visual
+            [ { z: modelZone, inp: modelInput, fn: window.loadAvatarGLB },
+              { z: animZone, inp: animInput, fn: (urls) => window.loadFutureAnimations(urls) }
+            ].forEach((item) => {
+                item.z.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    item.z.classList.add('border-blue-500', 'bg-slate-900');
+                });
+                item.z.addEventListener('dragleave', () => {
+                    item.z.classList.remove('border-blue-500', 'bg-slate-900');
+                });
+                item.z.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    item.z.classList.remove('border-blue-500', 'bg-slate-900');
+                    if (e.dataTransfer.files.length > 0) {
+                        if (item.inp === modelInput) {
+                            const blobUrl = URL.createObjectURL(e.dataTransfer.files[0]);
+                            item.fn(blobUrl);
+                        } else {
+                            const fileBlobs = [];
+                            for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                                const file = e.dataTransfer.files[i];
+                                const url = URL.createObjectURL(file);
+                                Object.defineProperty(url, 'name', { value: file.name });
+                                fileBlobs.push(url);
+                            }
+                            item.fn(fileBlobs);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Remote URL loads functions
+        window.loadAvatarFromUrl = function() {
+            const url = document.getElementById('avatar-url-input').value.trim();
+            if (url) {
+                window.loadAvatarGLB(url);
+            } else {
+                alert('অনুগ্রহ করে সঠিক .glb ফাইলের URL দিন!');
+            }
+        };
+
+        window.loadAnimationFromUrl = function() {
+            const url = document.getElementById('anim-url-input').value.trim();
+            if (url) {
+                window.loadFutureAnimations([url]);
+            } else {
+                alert('অনুগ্রহ করে সঠিক .fbx অথবা .glb ফাইলের URL দিন!');
+            }
+        };
+
+        // Setting triggers
+        window.toggleGridHelper = function() {
+            const checked = document.getElementById('toggle-grid').checked;
+            gridHelper.visible = checked;
+        };
+
+        window.toggleSkeletonHelper = function() {
+            if (!activeAvatarMesh) return;
+            const checked = document.getElementById('toggle-skeleton').checked;
+            if (checked) {
+                if (skeletonHelper) scene.remove(skeletonHelper);
+                skeletonHelper = new THREE.SkeletonHelper(activeAvatarMesh);
+                scene.add(skeletonHelper);
+            } else {
+                if (skeletonHelper) {
+                    scene.remove(skeletonHelper);
+                    skeletonHelper = null;
+                }
+            }
+        };
+
+        window.toggleLightingBoost = function() {
+            const checked = document.getElementById('toggle-lighting').checked;
+            if (checked) {
+                ambientLight.intensity = parseFloat(document.getElementById('slider-ambient').value);
+                directionalLight.intensity = parseFloat(document.getElementById('slider-directional').value);
+            } else {
+                ambientLight.intensity = 0.15;
+                directionalLight.intensity = 0.2;
+            }
+        };
+
+        window.updateLighting = function() {
+            const amb = parseFloat(document.getElementById('slider-ambient').value);
+            const dir = parseFloat(document.getElementById('slider-directional').value);
+            
+            document.getElementById('label-ambient').textContent = amb;
+            document.getElementById('label-directional').textContent = dir;
+
+            if (document.getElementById('toggle-lighting').checked) {
+                ambientLight.intensity = amb;
+                directionalLight.intensity = dir;
+            }
+        };
+
+         window.bodyAdjustments = {
+            breasts: 1.0,
+            hips: 1.0,
+            waist: 1.0,
+            neck: 1.0,
+            head: 1.0,
+            thighs: 1.0
+        };
+
+        window.applyBodyAdjustment = function(part, value) {
+            window.bodyAdjustments[part] = parseFloat(value);
+            
+            // Update labels
+            const labelEl = document.getElementById(`label-body-${part}`);
+            if (labelEl) labelEl.textContent = parseFloat(value).toFixed(2);
+            
+            if (!activeAvatarMesh) return;
+            
+            activeAvatarMesh.traverse((node) => {
+                // 1. Morph Targets adjustment
+                if (node.isMesh && node.morphTargetDictionary && node.morphTargetInfluences) {
+                    for (const key in node.morphTargetDictionary) {
+                        const keyLower = key.toLowerCase();
+                        const idx = node.morphTargetDictionary[key];
+                        if (part === 'breasts' && (keyLower.includes('breast') || keyLower.includes('boob') || keyLower.includes('chest') || keyLower.includes('bust') || keyLower.includes('pac_big') || keyLower.includes('pac_small'))) {
+                            node.morphTargetInfluences[idx] = Math.max(0, parseFloat(value) - 1.0);
+                        }
+                        if (part === 'hips' && (keyLower.includes('hip') || keyLower.includes('butt') || keyLower.includes('glute') || keyLower.includes('pelvis'))) {
+                            node.morphTargetInfluences[idx] = Math.max(0, parseFloat(value) - 1.0);
+                        }
+                        if (part === 'waist' && (keyLower.includes('waist') || keyLower.includes('belly') || keyLower.includes('fat'))) {
+                            node.morphTargetInfluences[idx] = Math.max(0, parseFloat(value) - 1.0);
+                        }
+                        if (part === 'neck' && keyLower.includes('neck')) {
+                            node.morphTargetInfluences[idx] = Math.max(0, parseFloat(value) - 1.0);
+                        }
+                        if (part === 'head' && keyLower.includes('head')) {
+                            node.morphTargetInfluences[idx] = Math.max(0, parseFloat(value) - 1.0);
+                        }
+                    }
+                }
+                
+                // 2. Bone Custom Scaling adjustment
+                if (node.isBone) {
+                    const nameLower = node.name.toLowerCase();
+                    
+                    if (part === 'breasts' && (nameLower.includes('breast') || nameLower.includes('boob') || nameLower.includes('pectoral') || nameLower.includes('bust') || nameLower.includes('chest_l') || nameLower.includes('chest_r'))) {
+                        node.scale.set(parseFloat(value), parseFloat(value), parseFloat(value));
+                    }
+                    if (part === 'hips' && (nameLower.includes('hip') || nameLower.includes('pelvis') || nameLower.includes('butt') || nameLower.includes('glute'))) {
+                        node.scale.set(parseFloat(value), 1.0, parseFloat(value));
+                    }
+                    if (part === 'waist' && (nameLower.includes('spine') || nameLower.includes('waist') || nameLower.includes('spine01') || nameLower.includes('spine_01'))) {
+                        node.scale.set(parseFloat(value), 1.0, parseFloat(value));
+                    }
+                    if (part === 'neck' && nameLower.includes('neck')) {
+                        node.scale.set(parseFloat(value), 1.0, parseFloat(value));
+                    }
+                    if (part === 'head' && nameLower.includes('head')) {
+                        node.scale.set(parseFloat(value), parseFloat(value), parseFloat(value));
+                    }
+                    if (part === 'thighs' && (nameLower.includes('thigh') || nameLower.includes('up_leg') || nameLower.includes('upleg'))) {
+                        node.scale.set(parseFloat(value), 1.0, parseFloat(value));
+                    }
+                }
+            });
+        };
+
+        window.applyAllBodyAdjustmentsToActiveMesh = function() {
+            if (!activeAvatarMesh) return;
+            for (const key in window.bodyAdjustments) {
+                window.applyBodyAdjustment(key, window.bodyAdjustments[key]);
+            }
+        };
+
+        window.toggleDragYMode = function() {
+            window.isDragYMode = document.getElementById('toggle-drag-y').checked;
+            if (controls) {
+                controls.enabled = !window.isDragYMode; // Turn off camera orbit controls when dragging height Y
+            }
+            updateStatus(window.isDragYMode ? 'Drag up/down anywhere to shift heightY' : 'Camera view mode active', 'hand', false);
+        };
+
+        window.updateModelTransform = function() {
+            const scale = parseFloat(document.getElementById('slider-scale').value);
+            const posy = parseFloat(document.getElementById('slider-posy').value);
+
+            document.getElementById('label-scale').textContent = scale;
+            document.getElementById('label-posy').textContent = posy;
+
+            currentTargetScale = scale;
+            currentTargetPosY = posy;
+
+            if (activeAvatarMesh) {
+                activeAvatarMesh.scale.setScalar(scale);
+                activeAvatarMesh.position.y = posy;
+            }
+        };
+
+        window.resetCameraAndModel = function() {
+            camera.position.set(0, 1.6, 4.5);
+            controls.target.set(0, 1, 0);
+            controls.update();
+
+            document.getElementById('slider-scale').value = 1.0;
+            document.getElementById('slider-posy').value = 0.0;
+            
+            // Reset adjustments states
+            window.bodyAdjustments = { breasts: 1.0, hips: 1.0, waist: 1.0, neck: 1.0, head: 1.0, thighs: 1.0 };
+            ['breasts', 'hips', 'waist', 'neck', 'head', 'thighs'].forEach((part) => {
+                const slider = document.getElementById(`slider-body-${part}`);
+                if (slider) slider.value = 1.0;
+                const label = document.getElementById(`label-body-${part}`);
+                if (label) label.textContent = '1.00';
+            });
+
+            const dragToggle = document.getElementById('toggle-drag-y');
+            if (dragToggle) {
+                dragToggle.checked = false;
+                window.isDragYMode = false;
+                controls.enabled = true;
+            }
+
+            updateModelTransform();
+            window.applyAllBodyAdjustmentsToActiveMesh();
+        };
+
+        // Window resize callback
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+        }
+
+        // FPS calculate and state manager helper
+        function updateStatus(text, iconName = 'activity', showSpin = false) {
+            const statusEl = document.getElementById('status-text');
+            const statusBox = document.getElementById('model-status');
+            const iconEl = document.getElementById('status-icon');
+
+            statusEl.textContent = text;
+            
+            // Rebuild icon tag
+            const iconHtml = `<i data-lucide="${iconName}" id="status-icon" class="w-3.5 h-3.5 ${showSpin ? 'animate-spin' : ''}"></i>`;
+            const iconParent = iconEl.parentElement;
+            iconEl.outerHTML = iconHtml;
+
+            lucide.replace();
+        }
+
+        function updatePauseIcon(isPlaying) {
+            const icon = document.getElementById('play-pause-icon');
+            const btn = document.getElementById('play-pause-btn');
+
+            if (isPlaying) {
+                icon.outerHTML = `<i data-lucide="pause" id="play-pause-icon" class="w-4 h-4"></i>`;
+                btn.classList.add('bg-blue-600');
+                btn.classList.remove('bg-emerald-600');
+            } else {
+                icon.outerHTML = `<i data-lucide="play" id="play-pause-icon" class="w-4 h-4"></i>`;
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-emerald-600');
+            }
+            lucide.replace();
+        }
+
+        // Render request frame loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            // 1. Update active animation mixer
+            if (mixer && isAnimationPlaying) {
+                mixer.update(delta);
+            }
+
+            // 2. Procedural Idle Breath, Position & Action Modifiers
+            if (activeAvatarMesh) {
+                const elapsed = clock.getElapsedTime();
+                const pose = window.currentPose || 'stand';
+
+                // Let's locate critical target nodes
+                const hips = activeAvatarMesh.getObjectByName('Hips');
+                const head = activeAvatarMesh.getObjectByName('Head');
+                const spine = activeAvatarMesh.getObjectByName('Spine');
+                
+                const leftKnee = activeAvatarMesh.getObjectByName('LeftKnee');
+                const rightKnee = activeAvatarMesh.getObjectByName('RightKnee');
+                const leftFoot = activeAvatarMesh.getObjectByName('LeftFoot');
+                const rightFoot = activeAvatarMesh.getObjectByName('RightFoot');
+
+                const isProcedural = (activeAvatarMesh.name === 'Procedural_Cyber_Avatar');
+
+                if (pose === 'sit') {
+                    // Sit behavior: Lower overall vertical offsets
+                    activeAvatarMesh.position.y = currentTargetPosY - 0.55;
+                    
+                    if (isProcedural) {
+                        // Position procedural hip lower
+                        if (hips) hips.position.set(0, 0.45, 0);
+                        // Bend legs at the knees forwards and up
+                        if (leftKnee && rightKnee) {
+                            leftKnee.position.set(-0.15, 0.45, 0.4);
+                            rightKnee.position.set(0.15, 0.45, 0.4);
+                        }
+                        if (leftFoot && rightFoot) {
+                            leftFoot.position.set(-0.17, 0.05, 0.35);
+                            rightFoot.position.set(0.17, 0.05, 0.35);
+                        }
+                    }
+                } else if (pose === 'walk') {
+                    // Walk behavior: sway back and forth & up and down
+                    activeAvatarMesh.position.y = currentTargetPosY + Math.sin(elapsed * 4.5) * 0.05;
+                    activeAvatarMesh.position.x = Math.sin(elapsed * 1.5) * 0.25;
+                    
+                    if (isProcedural) {
+                        if (hips) hips.position.set(0, 0.9 + Math.sin(elapsed * 4.5) * 0.02, 0);
+                        // Alternate knees back and forth simulating footsteps
+                        if (leftKnee && rightKnee) {
+                            leftKnee.position.set(-0.15, 0.5, Math.sin(elapsed * 4.5) * 0.25);
+                            rightKnee.position.set(0.15, 0.5, -Math.sin(elapsed * 4.5) * 0.25);
+                        }
+                        if (leftFoot && rightFoot) {
+                            leftFoot.position.set(-0.17, 0.05 + Math.max(0, Math.sin(elapsed * 4.5)) * 0.08, Math.sin(elapsed * 4.5) * 0.2);
+                            rightFoot.position.set(0.17, 0.05 + Math.max(0, -Math.sin(elapsed * 4.5)) * 0.08, -Math.sin(elapsed * 4.5) * 0.2);
+                        }
+                    }
+                } else if (pose === 'hover') {
+                    // Hover behavior: float gracefully in the air in sine waves
+                    activeAvatarMesh.position.y = currentTargetPosY + 0.35 + Math.sin(elapsed * 2.5) * 0.15;
+                    activeAvatarMesh.position.x = 0;
+                    
+                    if (isProcedural) {
+                        if (hips) hips.position.set(0, 0.9, 0);
+                        // Legs float back softly
+                        if (leftKnee && rightKnee) {
+                            leftKnee.position.set(-0.12, 0.4, -0.1);
+                            rightKnee.position.set(0.12, 0.4, -0.1);
+                        }
+                        if (leftFoot && rightFoot) {
+                            leftFoot.position.set(-0.14, 0.0, -0.2);
+                            rightFoot.position.set(0.14, 0.0, -0.2);
+                        }
+                    }
+                } else {
+                    // Stand (Standard Idle breathing)
+                    activeAvatarMesh.position.y = currentTargetPosY;
+                    activeAvatarMesh.position.x = 0;
+                    
+                    if (isProcedural) {
+                        const breathingActive = (window.isBreathingEnabled !== false);
+                        if (hips) {
+                            hips.position.set(0, 0.9 + (breathingActive ? Math.sin(elapsed * 2) * 0.012 : 0), 0);
+                        }
+                        if (leftKnee && rightKnee) {
+                            leftKnee.position.set(-0.15, 0.5, 0);
+                            rightKnee.position.set(0.15, 0.5, 0);
+                        }
+                        if (leftFoot && rightFoot) {
+                            leftFoot.position.set(-0.17, 0.05, 0);
+                            rightFoot.position.set(0.17, 0.05, 0);
+                        }
+                    }
+                }
+
+                // Apply simple subtle random head look-around breathing to make it feel human
+                const breathingActiveGlobal = (window.isBreathingEnabled !== false);
+                
+                // Real-time procedurally generated chest volume expansions in breathing loop
+                if (breathingActiveGlobal && activeAvatarMesh) {
+                    activeAvatarMesh.traverse((node) => {
+                        if (node.isBone) {
+                            const nameLower = node.name.toLowerCase();
+                            // Target common spine and chest bones to expansion breathe naturally
+                            if (nameLower.includes('chest') || nameLower.includes('spine02') || nameLower.includes('spine_02')) {
+                                const breathCycle = 1.0 + Math.sin(elapsed * 2.2) * 0.015;
+                                const originalBreastScale = window.bodyAdjustments?.breasts || 1.0;
+                                node.scale.set(originalBreastScale * breathCycle, originalBreastScale, originalBreastScale * breathCycle);
+                            }
+                            if (nameLower.includes('neck')) {
+                                node.rotation.x = Math.sin(elapsed * 1.1) * 0.012;
+                            }
+                        }
+                    });
+                }
+
+                if (head) {
+                    if (breathingActiveGlobal) {
+                        head.position.y = (isProcedural ? 1.6 : head.position.y) + Math.sin(elapsed * 2 + 0.5) * 0.005;
+                        // Look around slightly
+                        if (!window.isSpeakingActive) {
+                            head.rotation.y = Math.sin(elapsed * 0.8) * 0.05;
+                        }
+                    } else if (isProcedural) {
+                        head.position.y = 1.6;
+                        head.rotation.y = 0;
+                    }
+                }
+                if (spine) {
+                    spine.rotation.z = breathingActiveGlobal ? Math.sin(elapsed * 1.2) * 0.015 : 0;
+                }
+            }
+
+            // Update procedural skeleton limb geometries dynamically to match moved joint positions
+            if (activeAvatarMesh && activeAvatarMesh.name === 'Procedural_Cyber_Avatar' && window.fallbackConnections) {
+                window.fallbackConnections.forEach((conn) => {
+                    const fromNode = activeAvatarMesh.getObjectByName(conn.from);
+                    const toNode = activeAvatarMesh.getObjectByName(conn.to);
+                    if (fromNode && toNode) {
+                        const pFrom = fromNode.position;
+                        const pTo = toNode.position;
+
+                        const direction = new THREE.Vector3().subVectors(pTo, pFrom);
+                        const distance = pFrom.distanceTo(pTo);
+                        
+                        // Stretch/rotate cylinder cylinder
+                        conn.cylinder.scale.set(1, distance / conn.initialDistance, 1);
+                        conn.cylinder.position.copy(pFrom).addScaledVector(direction, 0.5);
+                        conn.cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+                    }
+                });
+            }
+
+            // 3. Orbit camera updates
+            controls.update();
+
+            // 4. Render
+            renderer.render(scene, camera);
+
+            // 5. Update FPS count
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFpsUpdate >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+                document.getElementById('fps-display').textContent = fps;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+        }
+
+        // Window Init Entry
+        window.addEventListener('load', () => {
+            initScene();
+            
+            // Check if there is a local "avatar.glb" model to load automatically on boot
+            // (Standard placeholder loader sequence matching requested avatar.glb setup)
+            setTimeout(() => {
+                window.loadAvatarGLB('avatar.glb');
+            }, 500);
+        });
+
+        // Listen to messages from the parent React app for dynamic 3D sync
+        window.addEventListener('message', (event) => {
+            if (!event.data) return;
+            const data = event.data;
+            if (data.type === 'loadModel') {
+                const url = data.url;
+                if (url) {
+                    window.loadAvatarGLB(url);
+                }
+            } else if (data.type === 'playPose') {
+                const pose = data.pose;
+                if (pose) {
+                    window.currentPose = pose;
+                }
+            } else if (data.type === 'playMotion') {
+                const motion = data.motion;
+                if (motion) {
+                    // Update dropdown value and play
+                    const dropdown = document.getElementById('animation-dropdown');
+                    if (dropdown) {
+                        // dynamically add as temporary option if not present
+                        let found = false;
+                        for (let i = 0; i < dropdown.options.length; i++) {
+                            if (dropdown.options[i].value === motion) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found && motion) {
+                            const opt = document.createElement('option');
+                            opt.value = motion;
+                            opt.textContent = motion;
+                            dropdown.appendChild(opt);
+                        }
+                        dropdown.value = motion;
+                        
+                        // Handle load if there is some remote/temporary source path
+                        if (motion.endsWith('.fbx') || motion.endsWith('.glb')) {
+                            window.loadFutureAnimations([motion]);
+                        } else {
+                            window.playSelectedAnimation();
+                        }
+                    }
+                }
+            } else if (data.type === 'speak') {
+                // If we want the avatar to subtly move its head/jaw while speaking
+                if (activeAvatarMesh) {
+                    const head = activeAvatarMesh.getObjectByName('Head') || activeAvatarMesh.getObjectByName('mixamorigHead');
+                    if (head) {
+                        // Subtly animate the head to look alive while speaking Bengali
+                        let count = 0;
+                        window.isSpeakingActive = true;
+                        const interval = setInterval(() => {
+                            if (count > 40) {
+                                clearInterval(interval);
+                                window.isSpeakingActive = false;
+                            } else {
+                                head.rotation.x = (Math.sin(count * 0.4) * 0.04) + 0.02;
+                                head.rotation.y = Math.cos(count * 0.2) * 0.04;
+                                count++;
+                            }
+                        }, 80);
+                    }
+                }
+            } else if (data.type === 'setLiveMode') {
+                const isLive = !!data.isLiveMode;
+                const topBar = document.getElementById('top-bar-telemetry');
+                const leftBar = document.getElementById('left-sidebar');
+                const rightBar = document.getElementById('right-sidebar');
+                const bottomBar = document.getElementById('bottom-bar');
+                const megaToggle = document.getElementById('mega-panel-toggle-btn');
+                const grid = document.getElementById('ambient-grid');
+                
+                if (isLive) {
+                    if (topBar) topBar.style.display = 'none';
+                    if (leftBar) leftBar.style.display = 'none';
+                    if (rightBar) rightBar.style.display = 'none';
+                    if (bottomBar) bottomBar.style.display = 'none';
+                    if (megaToggle) megaToggle.style.display = 'none';
+                    if (grid) grid.style.display = 'none';
+                    document.body.style.backgroundColor = 'transparent';
+                    document.documentElement.style.backgroundColor = 'transparent';
+                    if (scene) scene.background = null;
+                } else {
+                    if (topBar) topBar.style.display = '';
+                    if (leftBar) leftBar.style.display = '';
+                    if (rightBar) rightBar.style.display = '';
+                    if (bottomBar) bottomBar.style.display = '';
+                    if (megaToggle) megaToggle.style.display = '';
+                    if (grid) grid.style.display = '';
+                    document.body.style.backgroundColor = 'transparent';
+                    document.documentElement.style.backgroundColor = 'transparent';
+                    if (scene) scene.background = null;
+                }
+            } else if (data.type === 'setScale') {
+                const scaleValue = parseFloat(data.scale);
+                if (!isNaN(scaleValue)) {
+                    currentTargetScale = scaleValue;
+                    const scaleSlider = document.getElementById('slider-scale');
+                    if (scaleSlider) scaleSlider.value = scaleValue;
+                    const scaleLabel = document.getElementById('label-scale');
+                    if (scaleLabel) scaleLabel.textContent = scaleValue.toFixed(1);
+                    if (activeAvatarMesh) {
+                        activeAvatarMesh.scale.setScalar(scaleValue);
+                    }
+                }
+            } else if (data.type === 'setPosy') {
+                const posyValue = parseFloat(data.posy);
+                if (!isNaN(posyValue)) {
+                    currentTargetPosY = posyValue;
+                    const posySlider = document.getElementById('slider-posy');
+                    if (posySlider) posySlider.value = posyValue;
+                    const posyLabel = document.getElementById('label-posy');
+                    if (posyLabel) posyLabel.textContent = posyValue.toFixed(2);
+                    if (activeAvatarMesh) {
+                        activeAvatarMesh.position.y = posyValue;
+                    }
+                }
+            } else if (data.type === 'setBreathing') {
+                window.isBreathingEnabled = !!data.enabled;
+            }
+        });
+
+    </script>
+</body>
+</html>
